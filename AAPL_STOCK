@@ -1,0 +1,495 @@
+!pip install yfinance
+
+import yfinance as yf
+
+# Download Apple stock data (2010-2023)
+data = yf.download("AAPL", start="2010-01-01", end="2023-12-31")
+data.to_csv("AAPL_stock.csv")  # Save to CSV
+
+import pandas as pd
+
+# Load without parsing dates to see raw structure
+df = pd.read_csv("AAPL_stock.csv")
+print("Columns in CSV:", df.columns.tolist())  # Check column names
+print(df.head())  # Verify data
+
+import pandas as pd
+
+# Load CSV, skip first 2 rows (metadata), and set column names
+df = pd.read_csv("AAPL_stock.csv", skiprows=2, header=None, 
+                 names=['Date', 'Close', 'High', 'Low', 'Open', 'Volume'])
+
+print(df.head())
+
+with open("AAPL_stock.csv", "r") as f:
+    print(f.readlines()[:5])  # Print first 5 lines
+
+import pandas as pd
+
+# Skip first 2 rows (metadata) and manually assign column names
+df = pd.read_csv(
+    "AAPL_stock.csv",
+    skiprows=2,
+    header=None,
+    names=['Date', 'Close', 'High', 'Low', 'Open', 'Volume']
+)
+
+# Convert 'Date' to datetime, coercing errors to identify issues
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+
+# Check for rows where date parsing failed (if any)
+print("Rows with invalid dates:")
+print(df[df['Date'].isna()])
+
+df = df.dropna(subset=['Date'])
+
+df['Date'] = pd.to_datetime(df['Date'], format='%d-%m-%Y', errors='coerce')
+df.head()
+
+# Set index and ensure numeric columns
+df = df.set_index('Date')
+numeric_cols = ['Close', 'High', 'Low', 'Open', 'Volume']
+df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+
+print(df.head())
+
+import matplotlib.pyplot as plt
+
+# Plot closing prices
+plt.figure(figsize=(12, 6))
+plt.plot(df['Close'])
+plt.title('AAPL Stock Price (2010-2023)')
+plt.xlabel('Date')
+plt.ylabel('Price ($)')
+plt.grid()
+plt.show()
+
+# Check for missing values
+print("Missing values:")
+print(df.isnull().sum())
+
+# 7-day moving average
+df['MA_7'] = df['Close'].rolling(window=7).mean()
+
+# Daily returns
+df['Daily_Return'] = df['Close'].pct_change()
+
+# Plot moving average
+plt.figure(figsize=(12, 6))
+plt.plot(df['Close'], label='Price')
+plt.plot(df['MA_7'], label='7-Day MA')
+plt.legend()
+plt.show()
+
+!pip install statsmodels
+
+
+from statsmodels.tsa.arima.model import ARIMA
+
+# Split data
+train = df[:'2021-12-31']
+test = df['2022-01-01':]
+
+# Fit model
+model = ARIMA(train['Close'], order=(5,1,0))  # (p,d,q)
+model_fit = model.fit()
+
+# Forecast
+arima_forecast = model_fit.forecast(steps=len(test))
+
+import pandas as pd
+df=pd.read_csv("AAPL_stock.csv")
+df.info
+
+df.plot()
+
+import numpy as np
+df= np.log(df)
+
+df.plot()
+
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+plot_acf(df['Close'].dropna(), lags=50)
+plot_pacf(df['Close'].dropna(), lags=50)
+
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+plot_acf(df['Close'].dropna(), lags=50)
+plot_pacf(df['Close'].dropna(), lags=50)
+
+
+# 1. Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import warnings
+warnings.filterwarnings('ignore')
+
+# 2. Load data
+df = pd.read_csv('AAPL_stock.csv', parse_dates=['Date'])
+df.set_index('Date', inplace=True)
+df = df.sort_index()
+
+# 3. Visualize closing price
+plt.figure(figsize=(12,6))
+plt.plot(df['Close'])
+plt.title('AAPL Closing Price')
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.show()
+
+# 4. Check stationarity (optional)
+from statsmodels.tsa.stattools import adfuller
+result = adfuller(df['Close'])
+print('ADF Statistic:', result[0])
+print('p-value:', result[1])
+
+# 5. Plot ACF and PACF to choose p, d, q
+plot_acf(df['Close'])
+plot_pacf(df['Close'])
+plt.show()
+
+# 6. Fit ARIMA model (example: ARIMA(5,1,2))
+model = ARIMA(df['Close'], order=(5,1,2))
+model_fit = model.fit()
+print(model_fit.summary())
+
+# 7. Forecast next 30 days
+forecast = model_fit.forecast(steps=30)
+plt.figure(figsize=(12,6))
+plt.plot(df['Close'], label='Historical')
+plt.plot(pd.date_range(df.index[-1], periods=31, freq='B')[1:], forecast, label='Forecast')
+plt.title('AAPL Stock Price Forecast')
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.legend()
+plt.show()
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import warnings
+warnings.filterwarnings('ignore')
+
+# 1. Load CSV, skip metadata rows, and set column names
+df = pd.read_csv(
+    'AAPL_stock.csv',
+    skiprows=2,  # skip first 2 metadata rows
+    header=None,
+    names=['Date', 'Close', 'High', 'Low', 'Open', 'Volume']
+)
+
+# 2. Convert 'Date' to datetime and set as index
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+df = df.dropna(subset=['Date'])  # drop rows where date parsing failed
+df = df.set_index('Date')
+numeric_cols = ['Close', 'High', 'Low', 'Open', 'Volume']
+df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+
+# 3. Visualize closing price
+plt.figure(figsize=(12,6))
+plt.plot(df['Close'])
+plt.title('AAPL Closing Price')
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.show()
+
+# 4. Check stationarity (optional)
+from statsmodels.tsa.stattools import adfuller
+result = adfuller(df['Close'].dropna())
+print('ADF Statistic:', result[0])
+print('p-value:', result[1])
+
+# 5. Plot ACF and PACF to choose p, d, q
+plot_acf(df['Close'].dropna())
+plot_pacf(df['Close'].dropna())
+plt.show()
+
+# 6. Fit ARIMA model (example: ARIMA(5,1,2))
+model = ARIMA(df['Close'], order=(5,1,2))
+model_fit = model.fit()
+print(model_fit.summary())
+
+# 7. Forecast next 30 days
+forecast = model_fit.forecast(steps=30)
+plt.figure(figsize=(12,6))
+plt.plot(df['Close'], label='Historical')
+plt.plot(pd.date_range(df.index[-1], periods=31, freq='B')[1:], forecast, label='Forecast')
+plt.title('AAPL Stock Price Forecast')
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.legend()
+plt.show()
+
+import matplotlib.pyplot as pltre
+residuals = model_fit.resid[1:]
+fig, ax = plt.subplots(1,2, figsize=(15,5))
+residuals.plot(title="Residuals", ax=ax[0])
+residuals.plot(kind='kde', title='Density', ax=ax[1])   
+plt.show()
+
+acf_res=plot_acf(residuals, lags=50)
+pacf_residuals=plot_pacf(residuals, lags=50)    
+
+# SARIMA Model
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Ensure datetime index
+df.index = pd.to_datetime(df.index)
+
+# Automatically pick the first numeric column if "Value" is not present
+numeric_cols = df.select_dtypes(include=['float64','int64']).columns
+if "Value" in df.columns:
+    target_col = "Value"
+else:
+    target_col = numeric_cols[0]   # use the first numeric column
+print(f"Using column '{target_col}' for SARIMA modeling.")
+
+# Train-test split
+train_size = int(len(df) * 0.8)
+train, test = df.iloc[:train_size], df.iloc[train_size:]
+
+# Fit SARIMA model
+sarima_model = SARIMAX(train[target_col],
+                       order=(1,1,1),              # (p,d,q)
+                       seasonal_order=(1,1,1,12),  # (P,D,Q,m) - m=12 for monthly data
+                       enforce_stationarity=False,
+                       enforce_invertibility=False)
+
+sarima_result = sarima_model.fit(disp=False)
+
+# Forecast
+sarima_forecast = sarima_result.get_forecast(steps=len(test))
+sarima_pred = sarima_forecast.predicted_mean
+sarima_conf = sarima_forecast.conf_int()
+
+# Plot
+plt.figure(figsize=(12,6))
+plt.plot(train.index, train[target_col], label='Train')
+plt.plot(test.index, test[target_col], label='Test')
+plt.plot(sarima_pred.index, sarima_pred, label='SARIMA Forecast', color='red')
+plt.fill_between(sarima_conf.index,
+                 sarima_conf.iloc[:, 0],
+                 sarima_conf.iloc[:, 1], color='pink', alpha=0.3)
+plt.legend()
+plt.show()
+
+
+# Prophet Model
+import pandas as pd
+import matplotlib.pyplot as plt
+from prophet import Prophet
+
+# Ensure datetime index
+df.index = pd.to_datetime(df.index)
+
+# Pick the same target column we used in SARIMA
+numeric_cols = df.select_dtypes(include=['float64','int64']).columns
+if "Value" in df.columns:
+    target_col = "Value"
+else:
+    target_col = numeric_cols[0]
+print(f"Using column '{target_col}' for Prophet modeling.")
+
+# Prepare data for Prophet
+prophet_df = df[[target_col]].reset_index()
+prophet_df.columns = ['ds', 'y']   # Prophet needs columns 'ds' (date), 'y' (target)
+
+# Train-test split
+train_size = int(len(prophet_df) * 0.8)
+train, test = prophet_df.iloc[:train_size], prophet_df.iloc[train_size:]
+
+# Fit Prophet model
+model = Prophet()
+model.fit(train)
+
+# Forecast
+future = model.make_future_dataframe(periods=len(test), freq='D')  # adjust freq if not daily
+forecast = model.predict(future)
+
+# Plot forecast vs actual
+plt.figure(figsize=(12,6))
+plt.plot(train['ds'], train['y'], label='Train')
+plt.plot(test['ds'], test['y'], label='Test')
+plt.plot(forecast['ds'], forecast['yhat'], label='Prophet Forecast', color='red')
+plt.fill_between(forecast['ds'],
+                 forecast['yhat_lower'],
+                 forecast['yhat_upper'], color='pink', alpha=0.3)
+
+
+# LSTM Model
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+
+# Ensure datetime index
+df.index = pd.to_datetime(df.index)
+
+# Pick the same target column
+numeric_cols = df.select_dtypes(include=['float64','int64']).columns
+if "Value" in df.columns:
+    target_col = "Value"
+else:
+    target_col = numeric_cols[0]
+print(f"Using column '{target_col}' for LSTM modeling.")
+
+# Extract values
+data = df[[target_col]].values
+
+# Scale data (LSTM works better with normalized values)
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_data = scaler.fit_transform(data)
+
+# Train-test split
+train_size = int(len(scaled_data) * 0.8)
+train, test = scaled_data[:train_size], scaled_data[train_size:]
+
+# Function to create sequences
+def create_sequences(dataset, time_step=30):
+    X, y = [], []
+    for i in range(len(dataset) - time_step):
+        X.append(dataset[i:(i + time_step), 0])
+        y.append(dataset[i + time_step, 0])
+    return np.array(X), np.array(y)
+
+time_step = 30  # how many past steps to look back
+X_train, y_train = create_sequences(train, time_step)
+X_test, y_test = create_sequences(test, time_step)
+
+# Reshape for LSTM [samples, time_steps, features]
+X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
+X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
+
+# Build LSTM model
+model = Sequential()
+model.add(LSTM(50, return_sequences=True, input_shape=(time_step, 1)))
+model.add(LSTM(50, return_sequences=False))
+model.add(Dense(25))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train model
+history = model.fit(X_train, y_train, batch_size=32, epochs=20, verbose=1)
+
+# Predictions
+train_pred = model.predict(X_train)
+test_pred = model.predict(X_test)
+
+# Inverse transform to original scale
+train_pred = scaler.inverse_transform(train_pred)
+test_pred = scaler.inverse_transform(test_pred)
+y_train_actual = scaler.inverse_transform(y_train.reshape(-1,1))
+y_test_actual = scaler.inverse_transform(y_test.reshape(-1,1))
+
+# Plot
+plt.figure(figsize=(12,6))
+plt.plot(df.index, data, label='Original Data')
+plt.plot(df.index[time_step:train_size], train_pred, label='Train Prediction')
+plt.plot(df.index[train_size+time_step:], test_pred, label='Test Prediction', color='red')
+plt.legend()
+plt.show()
+
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import numpy as np
+
+# ---------- SARIMA Evaluation ----------
+sarima_true = np.array(test).reshape(-1)            # convert test to numpy
+sarima_pred_arr = np.array(sarima_pred).reshape(-1) # convert forecast to numpy
+
+# align lengths
+min_len = min(len(sarima_true), len(sarima_pred_arr))
+sarima_true = sarima_true[:min_len]
+sarima_pred_arr = sarima_pred_arr[:min_len]
+
+sarima_mae = mean_absolute_error(sarima_true, sarima_pred_arr)
+sarima_rmse = np.sqrt(mean_squared_error(sarima_true, sarima_pred_arr))
+sarima_mape = np.mean(np.abs((sarima_true - sarima_pred_arr) / sarima_true)) * 100
+
+# ---------- Prophet Evaluation ----------
+prophet_true = np.array(test['y']) if isinstance(test, pd.DataFrame) and 'y' in test.columns else np.array(test).reshape(-1)
+prophet_pred = np.array(forecast.tail(len(test))['yhat']).reshape(-1)
+
+min_len = min(len(prophet_true), len(prophet_pred))
+prophet_true = prophet_true[:min_len]
+prophet_pred = prophet_pred[:min_len]
+
+prophet_mae = mean_absolute_error(prophet_true, prophet_pred)
+prophet_rmse = np.sqrt(mean_squared_error(prophet_true, prophet_pred))
+prophet_mape = np.mean(np.abs((prophet_true - prophet_pred) / prophet_true)) * 100
+
+# ---------- LSTM Evaluation ----------
+y_test_arr = np.array(y_test_actual).reshape(-1)
+lstm_pred_arr = np.array(test_pred).reshape(-1)
+
+min_len = min(len(y_test_arr), len(lstm_pred_arr))
+y_test_arr = y_test_arr[:min_len]
+lstm_pred_arr = lstm_pred_arr[:min_len]
+
+lstm_mae = mean_absolute_error(y_test_arr, lstm_pred_arr)
+lstm_rmse = np.sqrt(mean_squared_error(y_test_arr, lstm_pred_arr))
+lstm_mape = np.mean(np.abs((y_test_arr - lstm_pred_arr) / y_test_arr)) * 100
+
+# ---------- Print Results ----------
+print("📊 Model Evaluation Results:")
+print(f"SARIMA -> MAE: {sarima_mae:.4f}, RMSE: {sarima_rmse:.4f}, MAPE: {sarima_mape:.2f}%")
+print(f"Prophet -> MAE: {prophet_mae:.4f}, RMSE: {prophet_rmse:.4f}, MAPE: {prophet_mape:.2f}%")
+print(f"LSTM    -> MAE: {lstm_mae:.4f}, RMSE: {lstm_rmse:.4f}, MAPE: {lstm_mape:.2f}%")
+
+
+plt.figure(figsize=(14,7))
+
+# Create a safe x-axis
+if hasattr(test, "index"):  
+    x_axis = test.index
+else:
+    x_axis = np.arange(len(test))
+
+plt.plot(x_axis[:len(sarima_true)], sarima_true, label='Actual', color='black')
+plt.plot(x_axis[:len(sarima_pred_arr)], sarima_pred_arr, label='SARIMA Forecast', color='blue')
+plt.plot(x_axis[:len(prophet_pred)], prophet_pred, label='Prophet Forecast', color='green')
+plt.plot(x_axis[:len(lstm_pred_arr)], lstm_pred_arr, label='LSTM Forecast', color='red')
+
+plt.legend()
+plt.title("Model Forecast Comparison")
+plt.show()
+
+
+import matplotlib.pyplot as plt
+
+metrics = ['MAE', 'RMSE', 'MAPE']
+sarima_scores = [sarima_mae, sarima_rmse, sarima_mape]
+prophet_scores = [prophet_mae, prophet_rmse, prophet_mape]
+lstm_scores = [lstm_mae, lstm_rmse, lstm_mape]
+
+x = np.arange(len(metrics))  # metric positions
+width = 0.25
+
+plt.figure(figsize=(10,6))
+plt.bar(x - width, sarima_scores, width, label='SARIMA')
+plt.bar(x, prophet_scores, width, label='Prophet')
+plt.bar(x + width, lstm_scores, width, label='LSTM')
+
+plt.xticks(x, metrics)
+plt.ylabel("Error Value")
+plt.title("Model Evaluation Metrics Comparison")
+plt.legend()
+plt.show()
+
+
+residuals = sarima_true - sarima_pred_arr
+plt.figure(figsize=(12,5))
+plt.plot(residuals, label="SARIMA Residuals")
+plt.axhline(y=0, color='r', linestyle='--')
+plt.legend()
+plt.title("SARIMA Residuals Analysis")
+plt.show()
+
+
