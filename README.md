@@ -1,0 +1,1 @@
+This project demonstrates a comprehensive time series analysis of Apple Inc. (AAPL) stock data from January 2010 to December 2023. The analysis covers data collection, cleaning, visualization, and basic feature engineering to understand stock price trends and patterns over a 14-year period.
